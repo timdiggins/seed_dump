@@ -76,6 +76,14 @@ class SeedDump
                           model.table_exists? && \
                           model.exists?
                         end
+
+      # Eliminate HABTM models that have the same underlying table; otherwise
+      # they'll be dumped twice, once in each direction. Probably should apply
+      # to all models, but it's possible there are edge cases in which this
+      # is not the right behavior.
+
+      habtm, non_habtm = filtered_models.partition {|m| m.name =~ /^HABTM_/}
+      filtered_models = non_habtm + habtm.uniq { |m| m.table_name }
     end
 
     # Internal: Returns a Boolean indicating whether the value for the "APPEND"
