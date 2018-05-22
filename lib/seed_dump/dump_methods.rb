@@ -71,7 +71,7 @@ class SeedDump
       options[:exclude] ||= [:id, :created_at, :updated_at]
 
       method = options[:import] ? 'import' : 'create!'
-      io.write("#{model_for(records)}.#{method}(")
+      io.write("#{rewrite_model_class(model_for(records))}.#{method}(")
       if options[:import]
         io.write("[#{attribute_names(records, options).map {|name| name.to_sym.inspect}.join(', ')}], ")
       end
@@ -125,5 +125,16 @@ class SeedDump
       end
     end
 
+    # converts a Class or String representation of class into a string that can be loaded.
+    # This is because HABTM_ classes are private
+    def rewrite_model_class(klass)
+      name = klass.to_s.demodulize
+      if name.starts_with?("HABTM_")
+        m = klass.to_s.deconstantize
+        "#{m}.const_get(:#{name})"
+      else
+        klass.to_s
+      end
+    end
   end
 end

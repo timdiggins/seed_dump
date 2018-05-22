@@ -161,6 +161,40 @@ Sample.import([:id, :string, :text, :integer, :float, :decimal, :datetime, :time
       end
     end
   end
+
+  describe ".rewrite_model_class" do
+    before do
+      Rails.application.eager_load!
+    end
+  #
+    class Tester
+      include SeedDump::DumpMethods
+    end
+
+    class Sample2
+      private_constant
+      class HABTM_SomethingElse
+      end
+    end
+
+    def rewrite_model_class(obj)
+      Tester.new.send(:rewrite_model_class, obj) # because it's a private method
+    end
+    it "works for Sample (class)" do
+      expect(rewrite_model_class(Sample)).to eq("Sample")
+    end
+    it "works for Sample (string)" do
+      expect(rewrite_model_class("Sample")).to eq("Sample")
+    end
+    it "works for HABTM (string)" do
+      expect(rewrite_model_class("Sample2::HABTM_SomethingElse")).to eq("Sample2.const_get(:HABTM_SomethingElse)")
+    end
+    it "works for HABTM (class)" do
+      klass = Sample2.const_get(:HABTM_SomethingElse)
+      expect(klass.to_s).to eq("Sample2::HABTM_SomethingElse") # double check
+      expect(rewrite_model_class(klass)).to eq("Sample2.const_get(:HABTM_SomethingElse)")
+    end
+  end
 end
 
 class RangeSample
